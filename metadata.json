@@ -1,0 +1,6 @@
+{
+  "name": "Captain Agent Orchestrator",
+  "description": "Master orchestrator for modular multi-agent AI systems, intelligently decomposing user goals, dispatching specialized sub-agents, and synthesizing comprehensive deliverables.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

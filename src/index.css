@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom styled scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(63, 63, 70, 0.6);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(82, 82, 91, 0.8);
+}
+
+/* Prose markdown formatting */
+.prose h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.025em;
+}
+.prose h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f4f4f5;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.prose h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  margin-top: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+.prose h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #d4d4d8;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+.prose p {
+  color: #d4d4d8;
+  line-height: 1.65;
+  margin-bottom: 0.75rem;
+}
+.prose ul, .prose ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+}
+.prose ul {
+  list-style-type: disc;
+}
+.prose ol {
+  list-style-type: decimal;
+}
+.prose li {
+  margin-bottom: 0.35rem;
+  color: #d4d4d8;
+}
+.prose code {
+  background-color: rgba(39, 39, 42, 0.8);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.375rem;
+  font-size: 0.85em;
+  color: #a5b4fc;
+  border: 1px solid rgba(63, 63, 70, 0.5);
+}
+.prose pre {
+  background-color: #09090b !important;
+  border: 1px solid #27272a;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+}
+.prose pre code {
+  background-color: transparent !important;
+  border: none;
+  padding: 0;
+  color: #38bdf8;
+  font-size: 0.85rem;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+.prose th {
+  background-color: rgba(24, 24, 27, 0.9);
+  color: #f4f4f5;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #27272a;
+}
+.prose td {
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #27272a;
+  color: #d4d4d8;
+}
+.prose tr:nth-child(even) {
+  background-color: rgba(24, 24, 27, 0.4);
+}
+.prose blockquote {
+  border-left: 3px solid #6366f1;
+  padding-left: 1rem;
+  font-style: italic;
+  color: #a1a1aa;
+  margin: 0.75rem 0;
+}
+.prose hr {
+  border-color: #27272a;
+  margin: 1.25rem 0;
+}
+
