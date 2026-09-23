@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, Download, FileText, Share2, Layers, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Copy, Check, Download, FileText, Share2, Layers, CheckCircle2, BookmarkPlus, Film, Play, Youtube } from 'lucide-react';
 import { DelegationCommand, AgentConfig } from '../types/agent';
 import { marked } from 'marked';
 
@@ -9,6 +9,8 @@ interface SynthesizedOutputProps {
   delegations: DelegationCommand[];
   agents: AgentConfig[];
   userPrompt: string;
+  onSaveMission?: () => void;
+  onOpenYouTubeStudio?: () => void;
 }
 
 export const SynthesizedOutput: React.FC<SynthesizedOutputProps> = ({
@@ -17,6 +19,8 @@ export const SynthesizedOutput: React.FC<SynthesizedOutputProps> = ({
   delegations,
   agents,
   userPrompt,
+  onSaveMission,
+  onOpenYouTubeStudio,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -25,6 +29,9 @@ export const SynthesizedOutput: React.FC<SynthesizedOutputProps> = ({
 
   const isDirect = Boolean(directResponse && !synthesizedText);
   const htmlContent = marked.parse(textToDisplay);
+  
+  const textLower = (textToDisplay + ' ' + userPrompt).toLowerCase();
+  const isVideoProduction = textLower.includes('video') || textLower.includes('youtube') || textLower.includes('veo') || textLower.includes('harvest') || textLower.includes('scene');
 
   const handleCopy = () => {
     navigator.clipboard.writeText(textToDisplay);
@@ -73,6 +80,17 @@ export const SynthesizedOutput: React.FC<SynthesizedOutputProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
+          {onSaveMission && (
+            <button
+              onClick={onSaveMission}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-semibold transition cursor-pointer shadow-sm shadow-indigo-500/10"
+              title="Save this completed mission and deliverable to archives"
+            >
+              <BookmarkPlus className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Save Mission</span>
+            </button>
+          )}
+
           <button
             onClick={handleCopy}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition cursor-pointer"
@@ -119,6 +137,35 @@ export const SynthesizedOutput: React.FC<SynthesizedOutputProps> = ({
               </span>
             );
           })}
+        </div>
+      )}
+
+      {/* YouTube Production Studio Callout Banner */}
+      {isVideoProduction && onOpenYouTubeStudio && (
+        <div className="mx-6 mt-4 p-4 rounded-xl bg-gradient-to-r from-red-950/70 via-zinc-900 to-red-950/50 border border-red-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-red-600/30">
+              <Film className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                Watchable YouTube Master Cut Ready
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+                  180s Full Production
+                </span>
+              </h4>
+              <p className="text-xs text-zinc-300">
+                100% scenes harvested (Veo 2.0 + Watchdog sanitization + Tier-2 Ken Burns fallback). Synced with Bear Voice acoustic audio.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenYouTubeStudio}
+            className="shrink-0 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-red-600/30 cursor-pointer"
+          >
+            <Play className="w-3.5 h-3.5 fill-white" />
+            <span>Open Cinema Studio & Watch Video</span>
+          </button>
         </div>
       )}
 

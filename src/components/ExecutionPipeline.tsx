@@ -9,6 +9,7 @@ interface ExecutionPipelineProps {
   agents: AgentConfig[];
   selectedAgentId: string | null;
   onSelectAgent: (agentId: string) => void;
+  activeMissionPrompt?: string;
 }
 
 export const ExecutionPipeline: React.FC<ExecutionPipelineProps> = ({
@@ -17,6 +18,7 @@ export const ExecutionPipeline: React.FC<ExecutionPipelineProps> = ({
   agents,
   selectedAgentId,
   onSelectAgent,
+  activeMissionPrompt,
 }) => {
   const isAnalyzing = phase === 'analyzing';
   const isAwaitingApproval = phase === 'awaiting_approval';
@@ -70,6 +72,23 @@ export const ExecutionPipeline: React.FC<ExecutionPipelineProps> = ({
           )}
         </div>
       </div>
+
+      {/* Dispatched Mission Cue (Shows after prompt text clears) */}
+      {activeMissionPrompt && phase !== 'idle' && (
+        <div className="mb-4 px-3.5 py-2 rounded-xl bg-zinc-950/80 border border-indigo-500/30 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono text-[10px] font-semibold uppercase tracking-wider shrink-0">
+              Active Command
+            </span>
+            <p className="text-zinc-200 truncate font-medium">
+              "{activeMissionPrompt}"
+            </p>
+          </div>
+          <span className="text-[10px] font-mono text-zinc-500 shrink-0 hidden sm:inline">
+            In Flight
+          </span>
+        </div>
+      )}
 
       {/* Visual Pipeline Nodes */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 relative items-stretch">

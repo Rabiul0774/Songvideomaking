@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Play, ArrowRight, RotateCcw, Sliders, CheckSquare, Zap, HelpCircle } from 'lucide-react';
+import { Sparkles, Play, ArrowRight, RotateCcw, Sliders, CheckSquare, Zap, HelpCircle, BookmarkPlus, FolderArchive } from 'lucide-react';
 import { WORKFLOW_PRESETS } from '../data/defaultAgents';
 import { WorkflowPreset } from '../types/agent';
 
@@ -11,6 +11,9 @@ interface GoalInputPanelProps {
   isExecuting: boolean;
   mode: 'auto' | 'interactive';
   onChangeMode: (mode: 'auto' | 'interactive') => void;
+  onSaveMission?: () => void;
+  onOpenPastMissions?: () => void;
+  canSave?: boolean;
 }
 
 export const GoalInputPanel: React.FC<GoalInputPanelProps> = ({
@@ -21,6 +24,9 @@ export const GoalInputPanel: React.FC<GoalInputPanelProps> = ({
   isExecuting,
   mode,
   onChangeMode,
+  onSaveMission,
+  onOpenPastMissions,
+  canSave = false,
 }) => {
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
 
@@ -99,6 +105,30 @@ export const GoalInputPanel: React.FC<GoalInputPanelProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {canSave && onSaveMission && (
+              <button
+                type="button"
+                onClick={onSaveMission}
+                className="px-3 py-1.5 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-300 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                title="Save this mission to browser archives"
+              >
+                <BookmarkPlus className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Save Mission</span>
+              </button>
+            )}
+
+            {onOpenPastMissions && (
+              <button
+                type="button"
+                onClick={onOpenPastMissions}
+                className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition flex items-center gap-1.5 cursor-pointer"
+                title="View past saved missions"
+              >
+                <FolderArchive className="w-3.5 h-3.5 text-purple-400" />
+                <span className="hidden sm:inline">Archives</span>
+              </button>
+            )}
+
             {userPrompt && (
               <button
                 type="button"

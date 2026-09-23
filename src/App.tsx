@@ -8,11 +8,16 @@ import { InteractiveApprovalModal } from './components/InteractiveApprovalModal'
 import { AgentRegistryModal } from './components/AgentRegistryModal';
 import { ProtocolInspectorModal } from './components/ProtocolInspectorModal';
 import { SwarmHealthModal } from './components/SwarmHealthModal';
+import { SaveMissionModal } from './components/SaveMissionModal';
+import { PastMissionsDrawer } from './components/PastMissionsDrawer';
+import { YouTubeProductionStudio } from './components/YouTubeProductionStudio';
+import { AutoCoderWorkbenchModal } from './components/AutoCoderWorkbenchModal';
 import { DEFAULT_AGENTS } from './data/defaultAgents';
 import { AgentConfig, DelegationCommand, OrchestrationLog, OrchestrationSession } from './types/agent';
 import { buildCaptainSystemPrompt, parseDelegationCommands } from './utils/orchestratorHelper';
 import { getExecutionHistory, saveExecutionRecord, AgentExecutionRecord } from './utils/swarmMetrics';
-import { Bot, Sparkles, Terminal, Activity, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { getSavedMissions, saveMission, deleteMission, clearAllMissions, SavedMission } from './utils/missionStorage';
+import { Bot, Sparkles, Terminal, Activity, ArrowRight, ShieldCheck, CheckCircle2, BookmarkCheck, Check, BookmarkPlus, FolderArchive } from 'lucide-react';
 
 export default function App() {
   const [agents, setAgents] = useState<AgentConfig[]>(() => {
@@ -45,11 +50,28 @@ export default function App() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [logs, setLogs] = useState<OrchestrationLog[]>([]);
 
+  // Mission Archives & Persistence state
+  const [savedMissions, setSavedMissions] = useState<SavedMission[]>(() => getSavedMissions());
+  const [currentMissionId, setCurrentMissionId] = useState<string | null>(null);
+  const [isPastMissionsOpen, setIsPastMissionsOpen] = useState(false);
+  const [isSaveMissionModalOpen, setIsSaveMissionModalOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'warn' } | null>(null);
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   // Modals
   const [isRegistryOpen, setIsRegistryOpen] = useState(false);
   const [isProtocolOpen, setIsProtocolOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isSwarmHealthOpen, setIsSwarmHealthOpen] = useState(false);
+  const [isYouTubeStudioOpen, setIsYouTubeStudioOpen] = useState(false);
+  const [isAutoCoderOpen, setIsAutoCoderOpen] = useState(false);
   const [swarmRecords, setSwarmRecords] = useState<AgentExecutionRecord[]>(() => getExecutionHistory());
 
   const refreshSwarmRecords = () => {
@@ -99,7 +121,86 @@ export default function App() {
     setDirectResponse('');
     setSynthesizedDeliverable('');
     setSelectedAgentId(null);
+    setCurrentMissionId(null);
     addLog('system', 'info', 'Mission workspace reset.');
+  };
+
+  // Handler: Confirm saving current session into localStorage
+  const handleConfirmSaveMission = (title: string, tags: string[]) => {
+    try {
+      const saved = saveMission({
+        id: currentMissionId || undefined,
+        title,
+        userPrompt,
+        mode,
+        phase,
+        captainPlanText,
+        delegations,
+        directResponse,
+        synthesizedDeliverable,
+        logs,
+        tags,
+      });
+
+      setSavedMissions(getSavedMissions());
+      setCurrentMissionId(saved.id);
+      setIsSaveMissionModalOpen(false);
+      setToast({
+        type: 'success',
+        message: `Mission "${saved.title}" saved to local archives!`,
+      });
+      addLog('system', 'success', `Mission "${saved.title}" serialized and saved to localStorage.`);
+    } catch (err: any) {
+      console.error('Failed to save mission:', err);
+      setToast({
+        type: 'warn',
+        message: `Failed to save mission: ${err.message}`,
+      });
+    }
+  };
+
+  // Handler: Reload past mission into current workspace
+  const handleReloadMission = (mission: SavedMission) => {
+    setUserPrompt(mission.userPrompt || '');
+    setMode(mission.mode || 'auto');
+    setPhase(mission.phase || 'completed');
+    setCaptainPlanText(mission.captainPlanText || '');
+    setDelegations(mission.delegations || []);
+    setDirectResponse(mission.directResponse || '');
+    setSynthesizedDeliverable(mission.synthesizedDeliverable || '');
+    setLogs(mission.logs || []);
+    setSelectedAgentId(null);
+    setCurrentMissionId(mission.id);
+
+    setToast({
+      type: 'success',
+      message: `Reloaded mission "${mission.title}" into workspace!`,
+    });
+    addLog('system', 'info', `Restored mission "${mission.title}" with ${mission.delegations?.length || 0} sub-agent deliverables.`);
+  };
+
+  // Handler: Delete mission from archives
+  const handleDeleteMission = (id: string) => {
+    const updated = deleteMission(id);
+    setSavedMissions(updated);
+    if (currentMissionId === id) {
+      setCurrentMissionId(null);
+    }
+    setToast({
+      type: 'info',
+      message: 'Mission removed from archives.',
+    });
+  };
+
+  // Handler: Clear all archives
+  const handleClearAllMissions = () => {
+    clearAllMissions();
+    setSavedMissions([]);
+    setCurrentMissionId(null);
+    setToast({
+      type: 'info',
+      message: 'All mission archives cleared.',
+    });
   };
 
   // Step 1: Start Mission -> Captain Agent analyzes & plans
@@ -304,9 +405,36 @@ export default function App() {
   };
 
   const isExecuting = phase === 'analyzing' || phase === 'executing_subagents' || phase === 'synthesizing';
+  const canSave = Boolean(userPrompt.trim() || delegations.length > 0 || synthesizedDeliverable || captainPlanText);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col antialiased selection:bg-indigo-500 selection:text-white relative">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-3 fade-in duration-200">
+          <div className={`px-4 py-3 rounded-2xl shadow-2xl border flex items-center gap-3 backdrop-blur-xl ${
+            toast.type === 'success'
+              ? 'bg-zinc-900/95 border-emerald-500/40 text-emerald-300 shadow-emerald-500/10'
+              : toast.type === 'warn'
+              ? 'bg-zinc-900/95 border-amber-500/40 text-amber-300 shadow-amber-500/10'
+              : 'bg-zinc-900/95 border-indigo-500/40 text-indigo-300 shadow-indigo-500/10'
+          }`}>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+              toast.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'
+            }`}>
+              <Check className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-xs font-medium text-zinc-100">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="text-zinc-500 hover:text-white transition ml-1"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <Header
         agents={agents}
@@ -314,11 +442,25 @@ export default function App() {
         onOpenRegistry={() => setIsRegistryOpen(true)}
         onOpenProtocol={() => setIsProtocolOpen(true)}
         onOpenSwarmHealth={() => setIsSwarmHealthOpen(true)}
+        onOpenSaveMission={() => setIsSaveMissionModalOpen(true)}
+        onOpenPastMissions={() => setIsPastMissionsOpen(true)}
+        onOpenYouTubeStudio={() => setIsYouTubeStudioOpen(true)}
+        onOpenAutoCoder={() => setIsAutoCoderOpen(true)}
+        savedMissionsCount={savedMissions.length}
+        canSave={canSave}
         isExecuting={isExecuting}
       />
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
+        {/* YouTube Video Production Cinema Studio (when active) */}
+        {isYouTubeStudioOpen && (
+          <YouTubeProductionStudio
+            onClose={() => setIsYouTubeStudioOpen(false)}
+            initialTheme={userPrompt || "Monsoon rain on the streets of old Kolkata, acoustic memories"}
+          />
+        )}
+
         {/* Visual Workflow Pipeline DAG */}
         <ExecutionPipeline
           phase={phase}
@@ -337,6 +479,9 @@ export default function App() {
           isExecuting={isExecuting}
           mode={mode}
           onChangeMode={setMode}
+          onSaveMission={() => setIsSaveMissionModalOpen(true)}
+          onOpenPastMissions={() => setIsPastMissionsOpen(true)}
+          canSave={canSave}
         />
 
         {/* Results Area */}
@@ -349,6 +494,8 @@ export default function App() {
               delegations={delegations}
               agents={agents}
               userPrompt={userPrompt}
+              onSaveMission={() => setIsSaveMissionModalOpen(true)}
+              onOpenYouTubeStudio={() => setIsYouTubeStudioOpen(true)}
             />
           )}
 
@@ -368,6 +515,38 @@ export default function App() {
       <footer className="border-t border-zinc-800/80 bg-zinc-950/60 py-4 px-4 lg:px-8 text-center text-xs text-zinc-500 font-mono">
         Captain Agent Orchestrator · Modular Swarm Manager · Step 1: Analyze & Plan → Step 2: Delegate → Step 3: Synthesize
       </footer>
+
+      {/* Past Missions Drawer */}
+      <PastMissionsDrawer
+        isOpen={isPastMissionsOpen}
+        onClose={() => setIsPastMissionsOpen(false)}
+        missions={savedMissions}
+        currentMissionId={currentMissionId}
+        onReloadMission={handleReloadMission}
+        onDeleteMission={handleDeleteMission}
+        onClearAllMissions={handleClearAllMissions}
+        agents={agents}
+        onOpenSaveModal={() => {
+          setIsPastMissionsOpen(false);
+          setIsSaveMissionModalOpen(true);
+        }}
+      />
+
+      {/* Save Mission Modal */}
+      <SaveMissionModal
+        isOpen={isSaveMissionModalOpen}
+        onClose={() => setIsSaveMissionModalOpen(false)}
+        userPrompt={userPrompt}
+        mode={mode}
+        phase={phase}
+        delegations={delegations}
+        captainPlanText={captainPlanText}
+        directResponse={directResponse}
+        synthesizedDeliverable={synthesizedDeliverable}
+        logs={logs}
+        agents={agents}
+        onConfirmSave={handleConfirmSaveMission}
+      />
 
       {/* Interactive Review / Approval Modal */}
       <InteractiveApprovalModal
@@ -411,6 +590,15 @@ export default function App() {
         agents={agents}
         records={swarmRecords}
         onRefreshRecords={refreshSwarmRecords}
+      />
+
+      {/* Autonomous Auto-Coder Workbench Modal */}
+      <AutoCoderWorkbenchModal
+        isOpen={isAutoCoderOpen}
+        onClose={() => setIsAutoCoderOpen(false)}
+        onApplyRepairedCode={(fixedCode) => {
+          setUserPrompt(`Autonomous Auto-Coder repaired script applied:\n\n\`\`\`python\n${fixedCode}\n\`\`\``);
+        }}
       />
     </div>
   );

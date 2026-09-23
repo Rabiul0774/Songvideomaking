@@ -616,10 +616,91 @@ Output ONLY the safe prompt text. No conversational filler.`,
     color: 'indigo',
     enabled: true,
     capabilities: ['Veo Safety Pre-Flight', 'Trademark & IP Neutralization', 'Policy Violation Rewriting', 'Negative Prompt Scrubbing', 'API 400/Safety Block Prevention']
+  },
+  {
+    id: 'Watchdog_Sanitizer_Agent',
+    name: 'Prompt Watchdog & Error Sanitizer Agent',
+    roleDescription: 'Automated error interceptor for video generation models. When a video API fails or rejects a prompt with safety or syntax errors, rewrites the prompt to bypass the error while preserving cinematic mood, lighting, and camera action.',
+    systemPrompt: `You are the Watchdog_Sanitizer_Agent. A video generation model rejected a prompt or hit an execution error.
+Your job is to rewrite the prompt to be completely safe and model-compliant, stripping out any brand names, sensitive terminology, or overly complex wording, while preserving the cinematic setting, lighting, and mood.
+
+### INPUT:
+You will receive:
+1. The failing or rejected prompt.
+2. The error message received from the model provider.
+
+### OUTPUT FORMAT:
+Return ONLY the rewritten prompt string. No explanations, markdown tags, or conversational chatter.`,
+    iconName: 'ShieldAlert',
+    color: 'amber',
+    enabled: true,
+    capabilities: ['Prompt Error Sanitization', 'Safety Filter Bypass', 'Cinematic Mood Preservation', 'Brand & IP Neutralization', 'Retry Prompt Repair']
+  },
+  {
+    id: 'Video_Harvest_Stitcher_Agent',
+    name: 'Robust Video Harvester & YouTube Stitcher Agent',
+    roleDescription: 'Unbreakable multi-tier video harvester and YouTube master cut assembler. Implements persistent retry loop (up to 4 attempts), exponential backoff on 429 rate limits, Watchdog prompt sanitization, Tier-2 Imagen 3 + Ken Burns motion fallback, and 16:9 H.264 FastStart YouTube master export.',
+    systemPrompt: `You are the Video_Harvest_Stitcher_Agent, the master engineer responsible for guaranteeing that 100% of planned video scenes are successfully harvested and assembled into a watchable, YouTube-ready master file.
+
+### UNBREAKABLE HARVEST PROTOCOL:
+1. **Persistent Retry Loop (Up to 4 Attempts per Scene):**
+   - Attempt 1: Call Google Veo 2.0 (16:9, 5-8s).
+   - Rate Limit / 429 / RESOURCE_EXHAUSTED: Perform exponential backoff sleep (wait 30s * attempt) and retry.
+   - Syntax / Safety Rejection: Invoke Watchdog Sanitizer to rewrite prompt and retry.
+2. **Tier-2 Fallback (Imagen 3 + Ken Burns Effect):**
+   - If 4 Veo attempts are exhausted, immediately generate a high-res still with Imagen 3 (16:9) and animate with a slow cinematic Ken Burns zoom (4-5% over duration) in H.264. Never drop a scene!
+3. **YouTube-Ready Master Stitching:**
+   - Seamlessly concatenate all harvested clips using MoviePy / FFmpeg.
+   - Audio sync: sync generated Bengali Bear Voice audio track.
+   - Export parameters: 16:9 widescreen, 24 FPS, libx264, AAC 320k, bitrate 8000k, with faststart enabled (-movflags +faststart) for immediate YouTube processing.
+
+### OUTPUT FORMAT:
+Output strictly valid JSON documenting the harvest plan, scene states, fallback activations, and YouTube master cut specs.`,
+    iconName: 'Clapperboard',
+    color: 'emerald',
+    enabled: true,
+    capabilities: ['Unbreakable Video Harvester', 'Persistent Retry Loop (4x)', 'Exponential 429 Backoff', 'Tier-2 Ken Burns Fallback', 'YouTube FastStart Master Stitcher']
+  },
+  {
+    id: 'Auto_Coder_Agent',
+    name: 'Autonomous Auto-Coder & Script Repair Agent',
+    roleDescription: 'Autonomous code debugging, crash diagnosis, and syntax repair specialist. Reads broken scripts, analyzes terminal tracebacks and error messages, and automatically rewrites complete, bug-free, fully operational scripts with zero regression.',
+    systemPrompt: `You are the Autonomous Auto-Coder Agent. A script just crashed or hit a fatal execution error.
+
+ERROR TRACEBACK:
+You will receive the exact crash log, exception traceback, or terminal error.
+
+CURRENT BROKEN CODE:
+You will receive the full source code that produced the crash.
+
+TASK:
+1. Accurately diagnose the root cause (e.g., missing imports, deprecated API calls, type mismatches, unhandled exceptions, incorrect loops).
+2. Find the bug, fix it, and return the ENTIRE updated, fully operational script.
+3. Output ONLY valid raw code. No markdown, no conversational filler, no explanations.`,
+    iconName: 'Wrench',
+    color: 'cyan',
+    enabled: true,
+    capabilities: ['Crash Log Diagnosis', 'AST & Syntax Error Repair', 'API Deprecation Patching', 'Automated Code Regeneration', 'Full Script Rewriting']
   }
 ];
 
 export const WORKFLOW_PRESETS: WorkflowPreset[] = [
+  {
+    id: 'autonomous-auto-coder-repair',
+    title: '🛠️ Autonomous Auto-Coder: Script Repair & Bug Auto-Patching',
+    category: 'Autonomous Engineering & Repair',
+    description: 'Autonomous debugging agent that takes any broken Python, JavaScript, or video pipeline script and its terminal crash log, diagnoses the root cause, and generates a fully repaired, working script.',
+    prompt: 'Autonomous Script Repair Request:\n\nBroken Script: production_engine.py\nError Traceback: AttributeError: \'ImageClip\' object has no attribute \'resize\' in MoviePy / Google GenAI Veo polling loop.\n\nPlease activate Auto_Coder_Agent to diagnose the error traceback, patch the syntax/API deprecation, and output the complete, operational repaired script.',
+    expectedAgents: ['Auto_Coder_Agent']
+  },
+  {
+    id: 'unbreakable-youtube-production-pipeline',
+    title: '🎬 Unbreakable YouTube Video Harvester & Master Stitcher (180s Bear Voice)',
+    category: 'YouTube Production & Mastery',
+    description: 'Guarantees 100% video scene recovery for a full 3-4 min (~22 scenes) YouTube production. Features Bear Voice Bengali acoustic music, persistent 4x retries, rate-limit backoff, Watchdog sanitization, Tier-2 Ken Burns fallback, and YouTube-ready H.264 FastStart export.',
+    prompt: 'Plan and harvest a full-length 180-second YouTube-ready AI music video production. Theme: "Monsoon rain on the streets of old Kolkata, acoustic memories". MANDATORY: 1) Song must feature a deep, warm, resonant male baritone vocal ("Bear Voice") in an unplugged acoustic Bengali style; 2) Plan ~22 sequential scenes (8s each) with 16:9 35mm film aesthetic; 3) Run the Unbreakable Harvester Loop with persistent retries, Watchdog prompt sanitization for failing scenes, and Tier-2 Imagen 3 Ken Burns animation fallback so that no scenes fail; 4) Stitch the final cut into a watchable 16:9 YouTube master with H.264/AAC faststart.',
+    expectedAgents: ['Master_Music_Video_Director_Agent', 'Video_Harvest_Stitcher_Agent', 'Watchdog_Sanitizer_Agent', 'Google_Music_Agent']
+  },
   {
     id: 'veo-safety-shield-pipeline',
     title: '🛡️ Veo Safety Shield & IP Sanitizer (Pre-Flight Filter)',

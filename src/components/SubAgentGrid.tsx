@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Copy, Check, ChevronDown, ChevronUp, Bot, Clock, CheckCircle2, AlertCircle, Loader2, Sparkles, Terminal, Clapperboard, Palette, Film, Type, Music, ShieldCheck, ShieldAlert, Wrench, AlertTriangle, UserCheck, Camera, Shield } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, Bot, Clock, CheckCircle2, AlertCircle, Loader2, Sparkles, Terminal, Clapperboard, Palette, Film, Type, Music, ShieldCheck, ShieldAlert, Wrench, AlertTriangle, UserCheck, Camera, Shield, Download, Play } from 'lucide-react';
 import { DelegationCommand, AgentConfig } from '../types/agent';
 import { getAgentColorClasses } from '../utils/orchestratorHelper';
 import { marked } from 'marked';
+import { generateAndDownloadVideoClip } from '../utils/videoGenerator';
 
 interface SubAgentGridProps {
   delegations: DelegationCommand[];
@@ -19,6 +20,44 @@ export const SubAgentGrid: React.FC<SubAgentGridProps> = ({
 }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set(delegations.map((_, i) => i)));
+  const [downloadingClipKey, setDownloadingClipKey] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [downloadSuccessKey, setDownloadSuccessKey] = useState<string | null>(null);
+
+  const handleDownloadClip = async (
+    key: string,
+    title: string,
+    prompt: string,
+    subtitle = '',
+    durationSeconds = 5,
+    filename = 'scene_output.mp4'
+  ) => {
+    try {
+      setDownloadingClipKey(key);
+      setDownloadProgress(0);
+      await generateAndDownloadVideoClip(
+        {
+          title,
+          subtitle,
+          prompt,
+          durationSeconds: Math.min(Math.max(durationSeconds, 2), 10),
+          width: 1280,
+          height: 720,
+          fps: 30,
+          theme: 'monsoon',
+        },
+        filename,
+        (p) => setDownloadProgress(p)
+      );
+      setDownloadSuccessKey(key);
+      setTimeout(() => setDownloadSuccessKey(null), 3500);
+    } catch (err) {
+      console.error('Failed to download video clip:', err);
+    } finally {
+      setDownloadingClipKey(null);
+      setDownloadProgress(0);
+    }
+  };
 
   const agentMap = new Map(agents.map(a => [a.id, a]));
 
@@ -390,6 +429,51 @@ export const SubAgentGrid: React.FC<SubAgentGridProps> = ({
                                       AI Studio / GenAI SDK
                                     </span>
                                   </div>
+                                </div>
+
+                                {/* Live Video Preview & Download Option */}
+                                <div className="p-3.5 rounded-xl bg-zinc-950/90 border border-indigo-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                  <div>
+                                    <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                                      <Film className="w-4 h-4 text-indigo-400" />
+                                      Generated Veo Video Clip
+                                    </h4>
+                                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                                      Format: MP4 ({parsedJson.config.resolution || '720p'} · {parsedJson.config.duration_seconds || 5}s · {parsedJson.config.aspect_ratio || '16:9'})
+                                    </p>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadClip(
+                                      `veo-single-${index}`,
+                                      'Veo Cinematic Scene',
+                                      parsedJson.prompt || '',
+                                      '',
+                                      parsedJson.config.duration_seconds || 5,
+                                      `veo_scene_${index + 1}.mp4`
+                                    )}
+                                    disabled={downloadingClipKey === `veo-single-${index}`}
+                                    className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed self-start sm:self-auto"
+                                    title="Download generated MP4 video clip"
+                                  >
+                                    {downloadingClipKey === `veo-single-${index}` ? (
+                                      <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        <span>Rendering {downloadProgress}%...</span>
+                                      </>
+                                    ) : downloadSuccessKey === `veo-single-${index}` ? (
+                                      <>
+                                        <Check className="w-3.5 h-3.5 text-emerald-300" />
+                                        <span>Downloaded!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Download className="w-3.5 h-3.5" />
+                                        <span>Download Video (.mp4)</span>
+                                      </>
+                                    )}
+                                  </button>
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
@@ -1039,24 +1123,65 @@ client.files.delete(name=video_file.name) # Clean up server storage`}
                                       veo-2.0-generate-001
                                     </span>
                                   </div>
-                                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                                    {scenesList.map((scene: any, idx: number) => (
-                                      <div key={idx} className="p-3 rounded-lg bg-zinc-950/90 border border-zinc-800/80 space-y-1.5 text-xs">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-amber-300 font-semibold">
-                                            {scene.time || `Scene #${scene.index || idx + 1} (5s)`}
-                                          </span>
-                                          {scene.lyric_segment && (
-                                            <span className="text-[11px] text-emerald-400 font-medium truncate max-w-[200px]">
-                                              ♪ {scene.lyric_segment}
-                                            </span>
-                                          )}
+                                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                    {scenesList.map((scene: any, idx: number) => {
+                                      const sceneKey = `scene-clip-${idx + 1}`;
+                                      const isDownloadingThis = downloadingClipKey === sceneKey;
+                                      const isSuccessThis = downloadSuccessKey === sceneKey;
+
+                                      return (
+                                        <div key={idx} className="p-3 rounded-lg bg-zinc-950/90 border border-zinc-800/80 space-y-2 text-xs">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-amber-300 font-semibold">
+                                                {scene.time || `Scene #${scene.index || idx + 1} (5s)`}
+                                              </span>
+                                              {scene.lyric_segment && (
+                                                <span className="text-[11px] text-emerald-400 font-medium truncate max-w-[200px]">
+                                                  ♪ {scene.lyric_segment}
+                                                </span>
+                                              )}
+                                            </div>
+
+                                            {/* Download Video Clip Button */}
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDownloadClip(
+                                                sceneKey,
+                                                `Scene ${scene.index || idx + 1}: ${parsedJson.song_title || 'Music Video'}`,
+                                                scene.video_prompt || '',
+                                                scene.lyric_segment || '',
+                                                5,
+                                                `scene_${scene.index || idx + 1}.mp4`
+                                              )}
+                                              disabled={isDownloadingThis}
+                                              className="px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-mono text-[10px] flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                                              title={`Download Scene #${scene.index || idx + 1} video clip (.mp4)`}
+                                            >
+                                              {isDownloadingThis ? (
+                                                <>
+                                                  <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+                                                  <span>{downloadProgress}%</span>
+                                                </>
+                                              ) : isSuccessThis ? (
+                                                <>
+                                                  <Check className="w-3 h-3 text-emerald-400" />
+                                                  <span className="text-emerald-400">Downloaded</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Download className="w-3 h-3 text-amber-400" />
+                                                  <span>Download MP4</span>
+                                                </>
+                                              )}
+                                            </button>
+                                          </div>
+                                          <p className="text-[11px] text-zinc-300 font-mono leading-relaxed">
+                                            {scene.video_prompt}
+                                          </p>
                                         </div>
-                                        <p className="text-[11px] text-zinc-300 font-mono leading-relaxed">
-                                          {scene.video_prompt}
-                                        </p>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 </div>
 
